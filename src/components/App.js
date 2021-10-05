@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { useState, useRef } from "react";
 import Loader from "react-loader-spinner";
 import constRequestData from "../data/dataForRequest.json";
 import fetchImages from "../services/fetchImages";
@@ -8,21 +8,22 @@ import ImageGallery from "./imageGallery/ImageGallery";
 import Modal from "./modal/Modal";
 import Searchbar from "./searchbar/Searchbar";
 
-class App extends Component {
-  state = {
-    images: [],
-    query: "",
-    page: 1,
-    modalData: "",
-    isLoading: false,
-  };
+const initData = {
+  images: [],
+  query: "",
+  modalData: "",
+  isLoading: false,
+};
 
-  getImages = async () => {
-    const { query } = this.state;
-    const dataForFetch = await this.prepareDataForRequest(query);
+const App = () => {
+  const [state, setState] = useState({ ...initData });
+  const page = useRef(1);
+
+  const getImages = async (query) => {
+    const dataForFetch = prepareDataForRequest(query);
 
     try {
-      this.loaderStatusToggler();
+      loaderStatusToggler();
       const res = await fetchImages(dataForFetch);
       const prepareedImagesData = res.hits.map(
         ({ id, webformatURL, largeImageURL, tags }) => ({
@@ -32,90 +33,91 @@ class App extends Component {
           tags,
         })
       );
-      this.addImagesToState(prepareedImagesData);
+      addImagesToState(prepareedImagesData);
     } catch (error) {
       console.log(error);
     } finally {
       smoothScroll();
-      this.loaderStatusToggler();
+      loaderStatusToggler();
     }
   };
 
-  addImagesToState = (newImagesArr) => {
-    if (this.state.page === 1) {
-      this.setState({ images: [...newImagesArr] });
+  const addImagesToState = (newImagesArr) => {
+    if (page.current === 1) {
+      setState((prev) => ({ ...prev, images: [...newImagesArr] }));
       return;
     }
-    this.setState((prev) => ({ images: [...prev.images, ...newImagesArr] }));
+    setState((prev) => ({
+      ...prev,
+      images: [...prev.images, ...newImagesArr],
+    }));
   };
 
-  onSubmite = async (query) => {
-    await this.resetPageBeforeSubmit();
-    this.setState({ query });
-    this.getImages();
+  const onSubmite = (query) => {
+    resetPageBeforeSubmit();
+    setState((prev) => ({ ...prev, query }));
+    getImages(query);
   };
 
-  onShowMoreBtn = async () => {
-    const { query } = this.state;
-    await this.increasePageNumber();
-    this.getImages(query);
+  const onShowMoreBtn = () => {
+    const { query } = state;
+    increasePageNumber();
+    getImages(query);
   };
 
-  onImgClick = (imgForModal) => {
-    this.setState({ modalData: imgForModal });
+  const onImgClick = (imgForModal) => {
+    setState((prev) => ({ ...prev, modalData: imgForModal }));
   };
 
-  onModalClosing = (e) => {
+  const onModalClosing = (e) => {
     if (e.target === e.currentTarget || e.code === "Escape") {
-      this.setState({ modalData: "" });
+      setState((prev) => ({ ...prev, modalData: "" }));
     }
   };
 
-  resetPageBeforeSubmit = async () => {
-    this.setState({ page: 1 });
+  const resetPageBeforeSubmit = () => {
+    page.current = 1;
   };
 
-  prepareDataForRequest = async (query) => {
-    const { page } = this.state;
-    const dataForRequest = { query, page, ...constRequestData };
+  const prepareDataForRequest = (query) => {
+    const curPage = page.current;
+    const dataForRequest = { query, curPage, ...constRequestData };
     return searchParams(dataForRequest);
   };
 
-  increasePageNumber = async () => {
-    this.setState({ page: this.state.page + 1 });
+  const increasePageNumber = () => {
+    page.current += 1;
   };
 
-  loaderStatusToggler = () => {
-    const loaderStatus = this.state.isLoading;
-    this.setState({ isLoading: !loaderStatus });
+  const loaderStatusToggler = () => {
+    setState((prev) => ({ ...prev, isLoading: !prev.isLoading }));
   };
 
-  render() {
-    const { images, isLoading, modalData } = this.state;
-    return (
-      <>
-        <Searchbar onSubmite={this.onSubmite} />
-        {isLoading && !images.length && (
-          <Loader
-            type="ThreeDots"
-            color="#1539ad"
-            height={100}
-            width={100}
-            timeout={5000}
-          />
-        )}
-        <ImageGallery
-          images={images}
-          onShowMoreBtn={this.onShowMoreBtn}
-          onImgClick={this.onImgClick}
-          isLoading={isLoading}
+  const { images, isLoading, modalData } = state;
+
+  return (
+    <>
+      <Searchbar onSubmite={onSubmite} />
+      {isLoading && !images.length && (
+        <Loader
+          type="ThreeDots"
+          color="#1539ad"
+          height={100}
+          width={100}
+          timeout={3000}
         />
-        {modalData && (
-          <Modal imageURL={modalData} onModalClosing={this.onModalClosing} />
-        )}
-      </>
-    );
-  }
-}
+      )}
+      <ImageGallery
+        images={images}
+        onShowMoreBtn={onShowMoreBtn}
+        onImgClick={onImgClick}
+        isLoading={isLoading}
+      />
+      {modalData && (
+        <Modal imageURL={modalData} onModalClosing={onModalClosing} />
+      )}
+    </>
+  );
+};
 
 export default App;

@@ -11,7 +11,7 @@ const ButtonShowMore = ({ onShowMoreBtn, isLoading }) => {
           color="#6186d6"
           height={200}
           width={200}
-          timeout={5000}
+          timeout={3000}
         />
       ) : (
         <p>Load more</p>

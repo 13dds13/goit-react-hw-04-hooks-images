@@ -1,30 +1,26 @@
-import React, { Component } from "react";
+import React, { useEffect } from "react";
 import PropTypes from "prop-types";
 
-class Modal extends Component {
-  onKeyDownEsc = (e) => {
-    this.props.onModalClosing(e);
+const Modal = ({ onModalClosing, imageURL }) => {
+  const onKeyDownEsc = (e) => {
+    onModalClosing(e);
   };
 
-  componentDidMount() {
-    window.addEventListener("keydown", this.onKeyDownEsc);
-  }
+  useEffect(() => {
+    window.addEventListener("keydown", onKeyDownEsc);
+    return () => {
+      window.removeEventListener("keydown", onKeyDownEsc);
+    };
+  });
 
-  componentWillUnmount() {
-    window.removeEventListener("keydown", this.onKeyDownEsc);
-  }
-
-  render() {
-    const { imageURL, onModalClosing } = this.props;
-    return (
-      <div className="Overlay" onClick={onModalClosing}>
-        <div className="Modal">
-          <img src={imageURL} alt="large" />
-        </div>
+  return (
+    <div className="Overlay" onClick={onModalClosing}>
+      <div className="Modal">
+        <img src={imageURL} alt="large" />
       </div>
-    );
-  }
-}
+    </div>
+  );
+};
 
 Modal.propTypes = {
   onModalClosing: PropTypes.func,

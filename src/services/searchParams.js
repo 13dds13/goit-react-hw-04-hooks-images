@@ -1,5 +1,11 @@
 const searchParams = (options) => {
-  const { page, query: q, KEY: key, BASE_URL, searchOptions } = options;
+  const {
+    curPage: page,
+    query: q,
+    KEY: key,
+    BASE_URL,
+    searchOptions,
+  } = options;
   const searchParams = new URLSearchParams({
     q,
     page,
