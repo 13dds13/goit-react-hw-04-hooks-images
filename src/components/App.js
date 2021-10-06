@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import Loader from "react-loader-spinner";
+import initialData from "../data/initialData.json";
 import constRequestData from "../data/dataForRequest.json";
 import fetchImages from "../services/fetchImages";
 import searchParams from "../services/searchParams";
@@ -8,24 +9,23 @@ import ImageGallery from "./imageGallery/ImageGallery";
 import Modal from "./modal/Modal";
 import Searchbar from "./searchbar/Searchbar";
 
-const initData = {
-  images: [],
-  query: "",
-  modalData: "",
-  isLoading: false,
-};
+const { imagesInit, queryInit, modalDataInit, isLoadingInit, pageInit } =
+  initialData;
 
 const App = () => {
-  const [state, setState] = useState({ ...initData });
-  const page = useRef(1);
+  const [images, setImages] = useState(imagesInit);
+  const [query, setQuery] = useState(queryInit);
+  const [modalData, setModalData] = useState(modalDataInit);
+  const [isLoading, setIsLoading] = useState(isLoadingInit);
+  const page = useRef(pageInit);
 
   const getImages = async (query) => {
     const dataForFetch = prepareDataForRequest(query);
 
     try {
-      loaderStatusToggler();
+      loaderToggler();
       const res = await fetchImages(dataForFetch);
-      const prepareedImagesData = res.hits.map(
+      const preparedImagesData = res.hits.map(
         ({ id, webformatURL, largeImageURL, tags }) => ({
           id,
           webformatURL,
@@ -33,45 +33,41 @@ const App = () => {
           tags,
         })
       );
-      addImagesToState(prepareedImagesData);
+      addImagesToState(preparedImagesData);
     } catch (error) {
       console.log(error);
     } finally {
       smoothScroll();
-      loaderStatusToggler();
+      loaderToggler();
     }
   };
 
   const addImagesToState = (newImagesArr) => {
     if (page.current === 1) {
-      setState((prev) => ({ ...prev, images: [...newImagesArr] }));
+      setImages([...newImagesArr]);
       return;
     }
-    setState((prev) => ({
-      ...prev,
-      images: [...prev.images, ...newImagesArr],
-    }));
+    setImages((prev) => [...prev, ...newImagesArr]);
   };
 
   const onSubmite = (query) => {
     resetPageBeforeSubmit();
-    setState((prev) => ({ ...prev, query }));
+    setQuery(query);
     getImages(query);
   };
 
   const onShowMoreBtn = () => {
-    const { query } = state;
     increasePageNumber();
     getImages(query);
   };
 
   const onImgClick = (imgForModal) => {
-    setState((prev) => ({ ...prev, modalData: imgForModal }));
+    setModalData(imgForModal);
   };
 
   const onModalClosing = (e) => {
     if (e.target === e.currentTarget || e.code === "Escape") {
-      setState((prev) => ({ ...prev, modalData: "" }));
+      setModalData(modalDataInit);
     }
   };
 
@@ -89,11 +85,7 @@ const App = () => {
     page.current += 1;
   };
 
-  const loaderStatusToggler = () => {
-    setState((prev) => ({ ...prev, isLoading: !prev.isLoading }));
-  };
-
-  const { images, isLoading, modalData } = state;
+  const loaderToggler = () => setIsLoading((prev) => !prev);
 
   return (
     <>
